@@ -594,3 +594,33 @@ Once `src/` is present, a typical feature addition looks like:
 5. **Update SEO** – page-specific title + meta via `react-helmet-async`.
 
 As more frontend code is published, this doc can link to concrete examples and route/component references.
+
+
+
+### Frontend folder structure
+
+```text
+frontend/
+  FRONTEND_DOCS.md
+  eslint.config.js
+  force-refresh.sh
+  index.html
+  package-lock.json
+  package.json
+  postcss.config.js
+  restart-dev.sh
+  tailwind.config.js
+  vite.config.js
+  public/
+    robots.txt
+    sitemap.xml
+    vite.svg
+    world-map.svg
+  scripts/
+    generate-sitemap.js
+  src/                  # planned: components, pages, hooks, routes
+    ...
+```
+
+---
+
