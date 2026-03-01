@@ -311,3 +311,286 @@ As the repository evolves and the full frontend source is published, this docume
 
 
 
+## Frontend at a Glance
+
+This document is for **anyone working on or with the ExtensionScanner UI**:
+
+- **If you’re non-technical or product-facing**: skim the first two sections to understand what the frontend is and how it runs.
+- **If you’re a developer**: jump to **“TL;DR – How to Run It”** and **“NPM Scripts (Cheat Sheet)”**.
+
+The frontend is a **React 18 + Vite** single-page app styled with **Tailwind CSS** and Radix-based UI components.
+
+- **Build/dev**: Vite (`vite`, `@vitejs/plugin-react`)
+- **Routing**: `react-router-dom`
+- **HTTP**: `axios` via a `/api` proxy to the backend
+- **Head/SEO**: `react-helmet-async`
+- **UI primitives**: Radix (`@radix-ui/react-*`), `lucide-react` icons
+- **Styling utilities**: Tailwind 4, `tailwindcss-animate`, `class-variance-authority`, `tailwind-merge`, `clsx`
+
+Right now this repo gives you the **tooling and entrypoint**; the React `src/` tree is being open‑sourced incrementally.
+
+If you just want the high level: the frontend is the **website and app UI** that talks to the security scanning backend over `/api`.
+
+---
+
+## TL;DR – How to Run It
+
+From the repo root:
+
+```bash
+cd frontend
+npm install          # first time only
+
+# in one terminal – backend
+# (make sure it's listening on http://localhost:8007)
+
+# in another terminal – frontend
+npm run dev          # http://localhost:5173
+```
+
+- All browser calls to `/api/...` are proxied to `http://localhost:8007`.
+- For a production build:
+
+```bash
+cd frontend
+npm run build
+npm run preview      # serve the built app locally
+```
+
+---
+
+## Project Layout
+
+From the repository root:
+
+- **`frontend/`** – Vite + React app
+  - **`index.html`** – HTML shell; mounts React into `#root` and loads `src/main.jsx`.
+  - **`public/`**
+    - `robots.txt` – search engine crawling rules.
+    - `sitemap.xml` – sitemap for public pages.
+    - `vite.svg`, `world-map.svg` – static assets.
+  - **`vite.config.js`** – Vite config + dev server proxy.
+  - **`tailwind.config.js`** – Tailwind content paths + plugins.
+  - **`postcss.config.js`** – Tailwind + Autoprefixer pipeline.
+  - **`eslint.config.js`** – ESLint flat config for React.
+  - **`scripts/generate-sitemap.js`** – regenerates `public/sitemap.xml`.
+  - **`package.json` / `package-lock.json`** – dependencies + NPM scripts.
+
+> The future `frontend/src/` directory will hold components, pages, hooks, and routes. `index.html` is already wired to `src/main.jsx`.
+
+---
+
+## NPM Scripts (Cheat Sheet)
+
+All in `frontend/package.json`:
+
+- **`npm run dev`** – Vite dev server with React Fast Refresh.
+- **`npm run build`** – `generate:sitemap` + production build to `dist/`.
+- **`npm run preview`** – Serve the built app locally.
+- **`npm run lint`** – ESLint for the frontend.
+- **`npm run format`** – Auto-format with Prettier.
+- **`npm run format:check`** – Verify formatting only.
+- **`npm run generate:sitemap`** – Rebuild `public/sitemap.xml`.
+
+Useful runtime deps:
+
+- **React / ReactDOM** – core rendering.
+- **`react-router-dom`** – routing.
+- **`react-helmet-async`** – document head.
+- **`axios`** – HTTP client (use `/api/...` URLs).
+- **Radix UI + `lucide-react`** – dialogs, dropdowns, tabs, tooltips, icons.
+
+Styling helpers:
+
+- **Tailwind CSS**, **`tailwindcss-animate`**
+- **`class-variance-authority`**, **`tailwind-merge`**, **`clsx`**
+
+---
+
+## Vite + Backend Proxy
+
+`frontend/vite.config.js`:
+
+- Uses `@vitejs/plugin-react`.
+- Proxies **`/api` → `http://localhost:8007`** with `changeOrigin: true`.
+
+**In practice:**
+
+- Dev HTTP calls look like:
+
+  ```js
+  // example
+  const res = await axios.get('/api/scan/123');
+  ```
+
+- In production you should either:
+  - Serve the frontend and backend from the same origin, or
+  - Put a reverse proxy (Nginx, etc.) in front that also routes `/api` correctly.
+
+---
+
+## Tailwind & Global Styles
+
+`tailwind.config.js`:
+
+- **`content`**:
+  - `./index.html`
+  - `./src/**/*.{js,ts,jsx,tsx}`
+- **`plugins`**:
+  - `tailwindcss-animate`
+
+So:
+
+- Any component under `src/` using Tailwind classes will be picked up.
+- `index.html` provides fonts (`Instrument Serif`, `JetBrains Mono`) and the root mount:
+
+  ```html
+  <div id="root"></div>
+  ```
+
+---
+
+## Linting & Formatting
+
+ESLint (`eslint.config.js`):
+
+- Base: `@eslint/js` recommended.
+- Plugins: `react-hooks` (`recommended-latest`), `react-refresh` (`vite`).
+- Env: browser globals, latest ECMAScript + JSX.
+- Custom rule:
+  - `'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }]` – allows unused `FOO_BAR`-style constants.
+
+Run:
+
+```bash
+cd frontend
+npm run lint
+npm run format       # or: npm run format:check
+```
+
+---
+
+## Common Tasks
+
+### Start Dev Stack
+
+```bash
+# backend (from repo root, see backend docs)
+
+cd frontend
+npm install      # first run
+npm run dev
+```
+
+### Build & Preview
+
+```bash
+cd frontend
+npm run build    # also regenerates sitemap
+npm run preview
+```
+
+### Change Backend Port
+
+If your backend isn’t on `http://localhost:8007`, edit `vite.config.js`:
+
+```js
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:YOUR_PORT',
+      changeOrigin: true,
+    },
+  },
+},
+```
+
+---
+
+## React App Architecture (Planned)
+
+The `src/` tree isn’t in this repo yet, but it’s expected to look roughly like:
+
+- **Entry**: `src/main.jsx`
+  - Mounts into `#root`.
+  - Wraps the app in `BrowserRouter`, `HelmetProvider`, etc.
+- **Routing**: `react-router-dom`
+  - Route-based pages (e.g. dashboard, extension details).
+  - Nested routes + shared layout components (nav, sidebars, etc.).
+- **UI**:
+  - Radix primitives for dialogs, selects, tabs, tooltips.
+  - Tailwind + `class-variance-authority` for consistent design.
+  - `lucide-react` icons.
+
+Once `src/` is open‑sourced, this section can be extended with a concrete routes table, component hierarchy, and state management notes.
+
+---
+
+## API Usage (Frontend)
+
+Recommended pattern with `axios`:
+
+```js
+// src/api/client.js (example)
+import axios from 'axios';
+
+export const api = axios.create({
+  baseURL: '/api',
+});
+
+// optional: interceptors for auth, logging, etc.
+```
+
+Example endpoint modules:
+
+```js
+// src/api/extensions.js (example)
+import { api } from './client';
+
+export function getExtension(id) {
+  return api.get(`/extensions/${id}`);
+}
+
+export function scanExtension(payload) {
+  return api.post('/scan', payload);
+}
+```
+
+Keep all HTTP code in `src/api/*` so components just call small functions and deal with data, not HTTP details.
+
+---
+
+## Conventions & Best Practices
+
+When `src/` lands, aim for:
+
+- **File structure**
+  - Group by **feature**: `src/features/extensions`, `src/features/scans`, etc.
+  - Shared primitives in `src/components/ui`.
+- **Components**
+  - Functional components + hooks.
+  - Co-locate styles/tests with the component.
+- **Styling**
+  - Tailwind for layout/spacing.
+  - `cva` for variant-based components (buttons, badges, alerts).
+  - `tailwind-merge` + `clsx` for safe `className` composition.
+- **Accessibility**
+  - Prefer Radix primitives for modals, menus, tooltips.
+  - Proper labels / ARIA on all interactive elements.
+- **Networking**
+  - Centralized `axios` client + thin endpoint modules.
+  - No direct `axios` calls deep in components; use hooks or API helpers.
+
+---
+
+## Extending the Frontend
+
+Once `src/` is present, a typical feature addition looks like:
+
+1. **Create a feature folder** – e.g. `src/features/policies`.
+2. **Add routes** – wire a page into `react-router-dom` and link it from existing nav.
+3. **Use shared primitives** – buttons, inputs, dialogs from `src/components/ui`.
+4. **Add API helpers** – new endpoints go into `src/api/*`, not directly in components.
+5. **Update SEO** – page-specific title + meta via `react-helmet-async`.
+
+As more frontend code is published, this doc can link to concrete examples and route/component references.
