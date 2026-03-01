@@ -7,10 +7,10 @@
   </picture>
 </p>
 <h3 align="center">
-  Visual Development On Any Stack
+  Know what your Chrome extensions can access
 </h3>
 <p align="center">
-   Turn Figma designs into code. Drag and drop your components. Publish with a click.
+   Free public scan by URL or extension ID and Check permissions, network access, version history, and known threats
 </p>
 
 <p align="center">
